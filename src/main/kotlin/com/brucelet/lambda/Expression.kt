@@ -8,13 +8,16 @@ sealed class Expression {
 
     fun substituteIfFree(from: String, to: Expression): Expression = substituteIfFree(Name(from), to)
 
+    abstract fun canReduce(): Boolean
     abstract fun reduceOnce(): Expression
     fun reduce(): Expression {
         var value: Expression = this
-        var nextValue: Expression = reduceOnce()
-        while (value != nextValue) {
+        while (value.canReduce()) {
+            val nextValue = value.reduceOnce()
+            if (nextValue == value) {
+                break
+            }
             value = nextValue
-            nextValue = value.reduceOnce()
         }
         return value
     }
@@ -25,8 +28,15 @@ private class InvalidSyntaxException(string: String) : IllegalArgumentException(
 data class Name(private val label: String) : Expression() {
     override fun substitute(from: Name, to: Expression) = if (this == from) to else this
     override fun reduceOnce() = this
+    override fun canReduce() = false
 
     override fun toString() = label
+
+    infix fun isBoundIn(expression: Expression): Boolean = when (expression) {
+        is Name -> false
+        is Function -> this == expression.name || this isBoundIn expression.body
+        is Application -> this isBoundIn expression.function || this isBoundIn expression.argument
+    }
 
     infix fun isFreeIn(expression: Expression): Boolean = when (expression) {
         is Name -> this == expression
@@ -35,14 +45,16 @@ data class Name(private val label: String) : Expression() {
     }
 
     infix fun isFreeIn(name: String) = this isFreeIn Name(name)
+    infix fun isBoundIn(name: String) = this isBoundIn Name(name)
 }
 
 data class Function(val name: Name, val body: Expression) : Expression() {
     constructor(name: String, body: Expression) : this(Name(name), body)
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
-    override fun substitute(from: Name, to: Expression) = Function(name, body.substitute(from, to))
+    override fun substitute(from: Name, to: Expression) = Function(if (name == from) to as Name else name, body.substitute(from, to))
     override fun reduceOnce(): Expression = Function(name, body.reduceOnce())
+    override fun canReduce(): Boolean = body.canReduce()
 
     override fun toString() = "λ$name.$body"
 }
@@ -53,10 +65,17 @@ data class Application(val function: Expression, val argument: Expression) : Exp
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
     override fun substitute(from: Name, to: Expression) = Application(function.substitute(from, to), argument.substitute(from, to))
-    override fun reduceOnce(): Expression = when (function) {
-        is Name -> Application(function, argument.reduceOnce())
-        is Function -> function.body.substituteIfFree(from = function.name, to = argument)
-        is Application -> Application(function.reduceOnce(), argument)
+    override fun reduceOnce(): Expression = if (argument.canReduce()) {
+        Application(function, argument.reduceOnce())
+    } else if (function.canReduce()) {
+        Application(function.reduceOnce(), argument)
+    } else when (function) {
+        is Function -> function.body.substitute(from = function.name, to = argument)
+        else -> this
+    }
+
+    override fun canReduce(): Boolean {
+        return function.canReduce() || argument.canReduce() || function is Function
     }
 
     override fun toString() = "($function $argument)"
@@ -111,8 +130,11 @@ fun String.parseExpression(): Expression {
 }
 
 fun String.parseAndReduce() = parseExpression().reduce()
+fun String.substitute(from: String, to: String) = parseExpression().substitute(from, to).toString()
 
 infix fun String.isFreeIn(expression: Expression) = Name(this) isFreeIn expression
 infix fun String.isFreeIn(name: String) = Name(this) isFreeIn name
+infix fun String.isBoundIn(expression: Expression) = Name(this) isBoundIn expression
+infix fun String.isBoundIn(name: String) = Name(this) isBoundIn name
 
 

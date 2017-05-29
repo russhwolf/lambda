@@ -15,8 +15,7 @@ class Chapter2Exercises {
 
     @Test fun `3`() {
         assertParseAndReduceEquals("($IDENTITY a)", "(($APPLY ($APPLY $IDENTITY)) a)")
-        // TODO fails for want of alpha-substitution
-//        assertParseAndReduceEquals("($APPLY a)", "(λx.λy.((($MAKE_PAIR x) y) $IDENTITY) a)")
+        assertParseAndReduceEquals("($APPLY a)", "(λx.λy.((($MAKE_PAIR x) y) $IDENTITY) a)", from = "y", to = "arg")
         assertParseAndReduceEquals("($IDENTITY a)", "(($SELF_APPLY ($SELF_APPLY $SELECT_SECOND)) a)")
     }
 }
