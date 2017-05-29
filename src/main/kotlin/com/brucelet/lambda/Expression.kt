@@ -86,7 +86,7 @@ fun String.parseExpression(): Expression {
 
     fun String.parseName(): Name {
         // Make sure we have no illegal characters anywhere
-        if (contains(Regex.fromLiteral("[ ()λ.]"))) stop()
+        if (contains('(') || contains('(') || contains(' ') || contains('.') || contains('λ')) stop()
         return Name(this)
     }
 

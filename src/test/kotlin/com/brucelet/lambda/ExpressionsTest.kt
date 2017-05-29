@@ -1,6 +1,5 @@
 package com.brucelet.lambda
 
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ExpressionsTest {
@@ -58,6 +57,4 @@ class ExpressionsTest {
         Application(x, SELECT_FIRST).assertReducesTo(a)
         Application(x, SELECT_SECOND).assertReducesTo(b)
     }
-
-    private fun Expression.assertReducesTo(expression: Expression) = assertEquals(expression, reduce())
 }
