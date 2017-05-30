@@ -52,7 +52,13 @@ data class Function(val name: Name, val body: Expression) : Expression() {
     constructor(name: String, body: Expression) : this(Name(name), body)
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
-    override fun substitute(from: Name, to: Expression) = Function(if (name == from) to as Name else name, body.substitute(from, to))
+    override fun substitute(from: Name, to: Expression) = if (name == from && to is Name) {
+        Function(to, body.substitute(from, to))
+    } else if (name != from) {
+        Function(name, body.substitute(from, to))
+    } else {
+        this
+    }
     override fun reduceOnce(): Expression = Function(name, body.reduceOnce())
     override fun canReduce(): Boolean = body.canReduce()
 
