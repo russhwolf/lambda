@@ -4,14 +4,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class NumbersTest {
-    val one = "λs.((s $FALSE) $ZERO)".parseExpression()
-    val two = "λs.((s $FALSE) λs.((s $FALSE) $ZERO))".parseExpression()
-    val three = "λs.((s $FALSE) λs.((s $FALSE) λs.((s $FALSE) $ZERO)))".parseExpression()
-
     @Test fun oneTwoThree() {
-        "($SUCC $ZERO)".assertReducesTo("$one")
-        "($SUCC $one)".assertReducesTo("$two")
-        "($SUCC $two)".assertReducesTo("$three")
+        "($SUCC $ZERO)".assertReducesTo("$ONE")
+        "($SUCC $ONE)".assertReducesTo("$TWO")
+        "($SUCC $TWO)".assertReducesTo("$THREE")
     }
 
     @Test fun isZero() {
@@ -26,9 +22,9 @@ class NumbersTest {
         val x = "λn.((($COND $ZERO) ($pred1 n)) ($IS_ZERO n))"
         assertEquals(x.parseAndReduce(), PRED.reduce())
 
-        "($PRED $one)".assertReducesTo("$ZERO")
-        "($PRED $two)".assertReducesTo("$one")
-        "($PRED $three)".assertReducesTo("$two")
+        "($PRED $ONE)".assertReducesTo("$ZERO")
+        "($PRED $TWO)".assertReducesTo("$ONE")
+        "($PRED $THREE)".assertReducesTo("$TWO")
 
         "($PRED $ZERO)".assertReducesTo("$ZERO")
     }
