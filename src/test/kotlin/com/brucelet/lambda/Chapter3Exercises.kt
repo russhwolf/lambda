@@ -31,10 +31,10 @@ class Chapter3Exercises {
 
     @Test fun `3`() {
         `3 helper`("λx.λy.(($AND ($NOT x)) ($NOT y))", "λx.λy.($NOT (($OR x) y))")
-//        `3 helper`("$implies", "λx.λy.(($implies ($NOT y)) ($NOT x))") // TODO fails on true/true check
+        `3 helper`("$implies", "λx.λy.(($implies ($NOT y)) ($NOT x))")
         `3 helper`("$NOT", "λx.($NOT ($NOT ($NOT x)))") // NB this is fine, 2nd arg is just ignored
         `3 helper`("$implies", "λx.λy.($NOT (($AND x) ($NOT y)))")
-//        `3 helper`("$equiv", "λx.λy.(($AND (($implies x) y)) (($implies y) x))") // TODO fails on false/true and true/false
+        `3 helper`("$equiv", "λx.λy.(($AND (($implies x) y)) (($implies y) x))")
     }
 
     fun `3 helper`(a: String, b: String) {

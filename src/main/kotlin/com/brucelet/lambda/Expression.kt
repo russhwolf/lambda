@@ -71,12 +71,11 @@ data class Application(val function: Expression, val argument: Expression) : Exp
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
     override fun substitute(from: Name, to: Expression) = Application(function.substitute(from, to), argument.substitute(from, to))
-    override fun reduceOnce(): Expression = if (argument.canReduce()) {
-        Application(function, argument.reduceOnce())
-    } else if (function.canReduce()) {
-        Application(function.reduceOnce(), argument)
-    } else when (function) {
-        is Function -> function.body.substitute(from = function.name, to = argument)
+    @Suppress("IfThenToElvis")
+    override fun reduceOnce(): Expression = when {
+        function is Function -> function.body.substitute(from = function.name, to = argument)
+        function.canReduce() -> Application(function.reduceOnce(), argument)
+        argument.canReduce() -> Application(function, argument.reduceOnce())
         else -> this
     }
 
