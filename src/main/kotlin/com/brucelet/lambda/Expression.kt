@@ -3,10 +3,6 @@ package com.brucelet.lambda
 sealed class Expression {
     abstract fun substitute(from: Name, to: Expression): Expression
     fun substitute(from: String, to: String) = substitute(Name(from), Name(to))
-    fun substituteIfFree(from: Name, to: Expression): Expression
-            = if (from isFreeIn this) substitute(from, to) else this
-
-    fun substituteIfFree(from: String, to: Expression): Expression = substituteIfFree(Name(from), to)
 
     abstract fun canReduce(): Boolean
     abstract fun reduceOnce(): Expression
@@ -50,12 +46,10 @@ data class Function(val name: Name, val body: Expression) : Expression() {
     constructor(name: String, body: Expression) : this(Name(name), body)
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
-    override fun substitute(from: Name, to: Expression) = if (name == from && to is Name) {
-        Function(to, body.substitute(from, to))
-    } else if (name != from) {
-        Function(name, body.substitute(from, to))
-    } else {
-        this
+    override fun substitute(from: Name, to: Expression) = when {
+        name == from && to is Name -> Function(to, body.substitute(from, to))
+        name != from -> Function(name, body.substitute(from, to))
+        else -> this
     }
     override fun reduceOnce(): Expression = Function(name, body.reduceOnce())
     override fun canReduce(): Boolean = body.canReduce()
@@ -69,7 +63,6 @@ data class Application(val function: Expression, val argument: Expression) : Exp
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
     override fun substitute(from: Name, to: Expression) = Application(function.substitute(from, to), argument.substitute(from, to))
-    @Suppress("IfThenToElvis")
     override fun reduceOnce(): Expression = when {
         function is Function -> function.body.substitute(from = function.name, to = argument)
         function.canReduce() -> Application(function.reduceOnce(), argument)
