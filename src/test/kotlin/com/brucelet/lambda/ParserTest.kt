@@ -14,10 +14,12 @@ class ParserTest {
     }
 
     @Test fun defineAndParse() {
-        parser.parseLine("#def identity x = x")
-        parser.parseLine("#def self_apply s = s s")
-        parser.parseLine("identity a")
-        parser.parseLine("self_apply a")
+        parser.parseLines("""
+                #def identity x = x
+                #def self_apply s = s s
+                identity a
+                self_apply a
+                """.trimIndent())
 
         outputLines.size.assertEquals(2)
         outputLines[0].assertEquals("a")

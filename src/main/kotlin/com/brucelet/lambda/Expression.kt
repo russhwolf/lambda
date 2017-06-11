@@ -1,11 +1,12 @@
 package com.brucelet.lambda
 
 sealed class Expression {
-    abstract fun substitute(from: Name, to: Expression): Expression
+    abstract fun substitute(from: Expression, to: Expression): Expression
     fun substitute(from: String, to: String) = substitute(Name(from), Name(to))
 
     abstract fun canReduce(): Boolean
     abstract fun reduceOnce(): Expression
+
     fun reduce(): Expression {
         var value: Expression = this
         while (value.canReduce()) {
@@ -20,7 +21,7 @@ sealed class Expression {
 }
 
 data class Name(private val label: String) : Expression() {
-    override fun substitute(from: Name, to: Expression) = if (this == from) to else this
+    override fun substitute(from: Expression, to: Expression) = if (this == from) to else this
     override fun reduceOnce() = this
     override fun canReduce() = false
 
@@ -46,7 +47,8 @@ data class Function(val name: Name, val body: Expression) : Expression() {
     constructor(name: String, body: Expression) : this(Name(name), body)
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
-    override fun substitute(from: Name, to: Expression) = when {
+    override fun substitute(from: Expression, to: Expression) = when {
+        this == from -> to
         name == from && to is Name -> Function(to, body.substitute(from, to))
         name != from -> Function(name, body.substitute(from, to))
         else -> this
@@ -62,7 +64,11 @@ data class Application(val function: Expression, val argument: Expression) : Exp
     constructor(name: Expression, body: String) : this(name, Name(body))
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
-    override fun substitute(from: Name, to: Expression) = Application(function.substitute(from, to), argument.substitute(from, to))
+    override fun substitute(from: Expression, to: Expression) = when {
+        this == from -> to
+        else -> Application(function.substitute(from, to), argument.substitute(from, to))
+    }
+
     override fun reduceOnce(): Expression = when {
         function is Function -> function.body.substitute(from = function.name, to = argument)
         function.canReduce() -> Application(function.reduceOnce(), argument)

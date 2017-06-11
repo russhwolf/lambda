@@ -8,38 +8,38 @@ class FunctionProviderTest {
 
     @Before fun setupProvider() {
         functionProvider = FunctionProvider(mapOf(
-                "identity" to "λx.x",
-                "self_apply" to "λs.(s s)"
+                Name("identity") to "λx.x".parseExpression(),
+                Name("self_apply") to "λs.(s s)".parseExpression()
         ))
     }
 
     @Test fun replaceNamesWithFunctions() {
         with(functionProvider) {
-            "identity".replaceNamesWithFunctions().assertEquals("λx.x")
+            "identity".parseExpression().replaceNamesWithFunctions().toString().assertEquals("λx.x")
         }
     }
 
     @Test fun replaceFunctionsWithNames() {
         with(functionProvider) {
-            "λx.x".replaceFunctionsWithNames().assertEquals("identity")
+            "λx.x".parseExpression().replaceFunctionsWithNames().toString().assertEquals("identity")
         }
     }
 
     @Test fun registersNewFunctions() {
-        val newExpression = "λfunc.λarg.(func arg)"
+        val newExpression = "λfunc.λarg.(func arg)".parseExpression()
         val newName = "apply"
         with(functionProvider) {
-            newName.replaceNamesWithFunctions().assertEquals(newName)
+            newName.parseExpression().replaceNamesWithFunctions().assertEquals(newName.parseExpression())
             registerFunction(newName, newExpression)
-            newName.replaceNamesWithFunctions().assertEquals(newExpression)
-            newExpression.replaceFunctionsWithNames().assertEquals(newName)
+            newName.parseExpression().replaceNamesWithFunctions().assertEquals(newExpression)
+            newExpression.replaceFunctionsWithNames().assertEquals(newName.parseExpression())
         }
     }
 
     @Test fun replaceParseAndReduce() {
         val expression = "(identity self_apply)"
         with(functionProvider) {
-            expression.replaceNamesWithFunctions().parseAndReduce().toString().replaceFunctionsWithNames().assertEquals("self_apply")
+            expression.parseExpression().replaceNamesWithFunctions().reduce().replaceFunctionsWithNames().toString().assertEquals("self_apply")
         }
     }
 }

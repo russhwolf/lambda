@@ -7,9 +7,11 @@ class Parser(val output: (String) -> Unit = ::println) {
         if (line.startsWith("#")) {
             line.parseKeywords()
         } else {
-            output(line.replaceNamesWithFunctions().parseAndReduce().toString().replaceFunctionsWithNames())
+            output(line.parseExpression().replaceNamesWithFunctions().reduce().replaceFunctionsWithNames().toString())
         }
     }
+
+    fun parseLines(lines: String) = lines.split("\n").forEach { parseLine(it) }
 
     private fun String.parseKeywords() {
         val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
@@ -37,7 +39,7 @@ class Parser(val output: (String) -> Unit = ::println) {
             val params = (2..equalsIndex - 1).map { tokens[it] }.fold("") { params, a -> params + "λ$a." }
             val body = (equalsIndex + 1..tokens.lastIndex).map { tokens[it] }.reduce { a, b -> "$a $b" }
             val function = if (equalsIndex + 1 == tokens.lastIndex) "$params$body" else "$params($body)"
-            functionProvider.registerFunction(name, function)
+            functionProvider.registerFunction(name, function.parseExpression())
         } else {
             stop("Invalid keyword")
         }

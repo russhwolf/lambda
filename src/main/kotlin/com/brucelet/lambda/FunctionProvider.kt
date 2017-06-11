@@ -1,25 +1,35 @@
 package com.brucelet.lambda
 
-class FunctionProvider(namesToFunctions: Map<String, String> = mapOf()) {
+class FunctionProvider(namesToFunctions: Map<Name, Expression> = mapOf()) {
     private val namesToFunctions = namesToFunctions.toMutableMap()
-    private val functionsToNames = namesToFunctions.toList().map { Pair(it.second, it.first) }.toMap().toMutableMap()
 
-    fun registerFunction(name: String, function: String) {
-        namesToFunctions.put(name, function)
-        functionsToNames.put(function, name)
+    fun registerFunction(name: String, function: Expression) {
+        namesToFunctions.put(Name(name), function)
     }
 
-    fun registerProvider(provider: FunctionProvider) = provider.namesToFunctions.keys.forEach {
-        registerFunction(it, provider.namesToFunctions.getValue(it))
+    fun Expression.replaceNamesWithFunctions(): Expression {
+        var prev: Expression? = null
+        var next = this
+        while (next != prev) {
+            prev = next
+            next = namesToFunctions.keys.fold(prev) {
+                expression, name ->
+                expression.substitute(name, namesToFunctions.getValue(name))
+            }
+        }
+        return next
     }
 
-    fun String.replaceNamesWithFunctions(): String = namesToFunctions.keys.fold(this) {
-        expression, name ->
-        expression.replace(name, namesToFunctions.getValue(name))
-    }
-
-    fun String.replaceFunctionsWithNames(): String = functionsToNames.keys.fold(this) {
-        expression, function ->
-        expression.replace(function, functionsToNames.getValue(function))
+    fun Expression.replaceFunctionsWithNames(): Expression {
+        var prev: Expression? = null
+        var next = this
+        while (next != prev) {
+            prev = next
+            next = namesToFunctions.values.fold(prev) {
+                expression, function ->
+                expression.substitute(function, namesToFunctions.keys.first { namesToFunctions[it] == function })
+            }
+        }
+        return next
     }
 }
