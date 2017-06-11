@@ -16,6 +16,7 @@ class ExpressionTest {
         fun String.assertParsesTo(expression: Expression) = assertEquals(expression, parseExpression())
         "A".assertParsesTo(Name("A"))
         "λA.B".assertParsesTo(Function("A", "B"))
+        "^A.B".assertParsesTo(Function("A", "B"))
         "(A B)".assertParsesTo(Application("A", "B"))
         "λA.λB.λF.((F A) B)".assertParsesTo(Function("A", Function("B", Function("F", Application(Application("F", "A"), "B")))))
         "A B C D".assertParsesTo(Application(Application(Application("A", "B"), "C"), "D"))

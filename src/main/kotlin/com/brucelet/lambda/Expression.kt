@@ -78,7 +78,7 @@ data class Application(val function: Expression, val argument: Expression) : Exp
 }
 
 fun String.parseExpression(): Expression {
-    val stop = { message: String -> throw IllegalArgumentException("$message in $this") }
+    val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
 
     fun String.insertParentheses(): String {
         var out = this
@@ -129,7 +129,7 @@ fun String.parseExpression(): Expression {
 
     fun String.parseName(): Name {
         // Make sure we have no illegal characters anywhere
-        toCharArray().forEach { if (!it.isLetterOrDigit()) stop("Illegal character '$it'") }
+        toCharArray().forEach { if (!(it.isLetterOrDigit() || it == '_')) stop("Illegal character '$it'") }
         return Name(this)
     }
 
@@ -168,7 +168,7 @@ fun String.parseExpression(): Expression {
     with(insertParentheses()) {
         return when (first()) {
             '(' -> parseApplication()
-            'λ' -> parseFunction()
+            'λ', '^' -> parseFunction()
             else -> parseName()
         }
     }
