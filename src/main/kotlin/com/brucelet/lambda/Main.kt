@@ -1,16 +1,20 @@
 package com.brucelet.lambda
 
 fun main(vararg args: kotlin.String) {
-    val functionProvider = FunctionProvider(mapOf(
-            "identity" to "λx.x",
-            "self_apply" to "λs.(s s)",
-            "apply" to "λfunc.λarg.(func arg)",
-            "select_first" to "λfirst.λsecond.first",
-            "select_second" to "λfirst.λsecond.second",
-            "make_pair" to "λfirst.λsecond.λfunc.((func first) second)"
-    ))
+    val lines: List<String> = parseInput(args)
+    val parser = generateParser()
 
-    val lines: List<String> = if (args.isEmpty()) {
+    for (line in lines) {
+        try {
+            parser.parseLine(line)
+        } catch (e: IllegalArgumentException) {
+            System.err.println(e.message)
+        }
+    }
+}
+
+private fun parseInput(args: Array<out String>): List<String> = when {
+    args.isEmpty() -> {
         val lines = mutableListOf<String>()
         println("insert commands (blank to finish)")
         while (true) {
@@ -19,17 +23,15 @@ fun main(vararg args: kotlin.String) {
             lines.add(line ?: break)
         }
         lines
-    } else {
-        args.asList()
     }
+    else -> args.asList()
+}
 
-    with(functionProvider) {
-        for (line in lines) {
-            try {
-                println(line.replaceNamesWithFunctions().parseAndReduce().toString().replaceFunctionsWithNames())
-            } catch (e: IllegalArgumentException) {
-                System.err.println(e.message)
-            }
-        }
-    }
+private fun generateParser(): Parser = Parser().apply {
+    parseLine("#def identity x = x")
+    parseLine("#def self_apply s = s s")
+    parseLine("#def apply func arg = func arg")
+    parseLine("#def select_first first second = first")
+    parseLine("#def select_second first second = second")
+    parseLine("#def make_pair e1 e2 c = c e1 e2")
 }
