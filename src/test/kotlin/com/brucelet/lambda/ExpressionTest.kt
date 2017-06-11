@@ -9,13 +9,24 @@ class ExpressionTest {
         assertEquals("λA.B", Function("A", "B").toString())
         assertEquals("(A B)", Application("A", "B").toString())
         assertEquals("λA.λB.λF.((F A) B)", Function("A", Function("B", Function("F", Application(Application("F", "A"), "B")))).toString())
+        assertEquals("(A (((B C) ((D E) F)) G))", Application("A", Application(Application(Application("B", "C"), Application(Application("D", "E"), "F")), "G")).toString())
     }
 
     @Test fun parseExpression() {
-        assertEquals(Name("A"), "A".parseExpression())
-        assertEquals(Function("A", "B"), "λA.B".parseExpression())
-        assertEquals(Application("A", "B"), "(A B)".parseExpression())
-        assertEquals(Function("A", Function("B", Function("F", Application(Application("F", "A"), "B")))), "λA.λB.λF.((F A) B)".parseExpression())
+        fun String.assertParsesTo(expression: Expression) = assertEquals(expression, parseExpression())
+        "A".assertParsesTo(Name("A"))
+        "λA.B".assertParsesTo(Function("A", "B"))
+        "(A B)".assertParsesTo(Application("A", "B"))
+        "λA.λB.λF.((F A) B)".assertParsesTo(Function("A", Function("B", Function("F", Application(Application("F", "A"), "B")))))
+        "A B C D".assertParsesTo(Application(Application(Application("A", "B"), "C"), "D"))
+        "A (B C)".assertParsesTo(Application("A", Application("B", "C")))
+        "(A B C)".assertParsesTo(Application(Application("A", "B"), "C"))
+        "A (B C D)".assertParsesTo(Application("A", Application(Application("B", "C"), "D")))
+        "(A (B C D))".assertParsesTo(Application("A", Application(Application("B", "C"), "D")))
+        "λA.(B C D)".assertParsesTo(Function("A", Application(Application("B", "C"), "D")))
+        "λA.B C D".assertParsesTo(Application(Application(Function("A", "B"), "C"), "D"))
+        "A (B C D) (E F G)".assertParsesTo(Application(Application("A", Application(Application("B", "C"), "D")), Application(Application("E", "F"), "G")))
+        "A (B C (D E F) G)".assertParsesTo(Application("A", Application(Application(Application("B", "C"), Application(Application("D", "E"), "F")), "G")))
     }
 
     @Test fun substitute() {

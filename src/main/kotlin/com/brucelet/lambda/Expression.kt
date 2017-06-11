@@ -23,8 +23,6 @@ sealed class Expression {
     }
 }
 
-private class InvalidSyntaxException(string: String) : IllegalArgumentException("Invalid expression: $string")
-
 data class Name(private val label: String) : Expression() {
     override fun substitute(from: Name, to: Expression) = if (this == from) to else this
     override fun reduceOnce() = this
@@ -87,25 +85,72 @@ data class Application(val function: Expression, val argument: Expression) : Exp
 }
 
 fun String.parseExpression(): Expression {
-    val stop = { throw InvalidSyntaxException(this) }
+    val stop = { message: String -> throw IllegalArgumentException("$message in $this") }
+
+    fun String.insertParentheses(): String {
+        var out = this
+
+        // Recurse into inner parens and add any missing
+        val opens = mutableListOf<Int>()
+        val closes = mutableListOf<Int>()
+        var depth = 0
+        for ((i, c) in out.withIndex()) {
+            when (c) {
+                '(' -> {
+                    if (depth == 0) opens += i
+                    depth++
+                }
+                ')' -> {
+                    depth--
+                    if (depth == 0) {
+                        if (opens.size != closes.size + 1) stop("Unbalanced parentheses")
+                        closes += i
+                    }
+                }
+            }
+        }
+        if (depth != 0 || opens.size != closes.size) stop("Unbalanced parentheses")
+        opens.indices.reversed().forEach {
+            out = "${out.substring(0, opens[it])}${out.substring(opens[it] + 1, closes[it]).insertParentheses()}${out.substring(closes[it] + 1, out.length)}"
+        }
+
+        // Count top level spaces, and add missing parens around them
+        val spaces = mutableListOf<Int>()
+        for ((i, c) in out.withIndex()) {
+            when (c) {
+                ' ' -> if (depth == 0) spaces += i
+                '(' -> depth++
+                ')' -> depth--
+            }
+        }
+
+        if (!spaces.isEmpty()) {
+            spaces.removeAt(0)
+            spaces.indices.forEach {
+                out = "(${out.substring(0, spaces[it] + 2 * it)})${out.substring(spaces[it] + 2 * it, out.length)}"
+            }
+            out = "($out)"
+        }
+        return out
+    }
 
     fun String.parseName(): Name {
         // Make sure we have no illegal characters anywhere
-        if (contains('(') || contains('(') || contains(' ') || contains('.') || contains('λ')) stop()
+        toCharArray().forEach { if (!it.isLetterOrDigit()) stop("Illegal character '$it'") }
         return Name(this)
     }
 
     fun String.parseFunction(): Function {
         // Find first . and split
         val dotIndex = indexOf('.')
-        if (dotIndex > lastIndex - 1) stop()
+        if (dotIndex > lastIndex - 1) stop("Illegal '.'")
         return Function(substring(1, dotIndex).parseName(), substring(dotIndex + 1).parseExpression())
     }
 
     fun String.parseApplication(): Application {
         // Make sure outer chars are parens
         if (last() != ')') {
-            stop()
+            stop("Missing ')'")
         }
         // Find a space at a valid paren depth
         var depth = 0
@@ -113,24 +158,26 @@ fun String.parseExpression(): Expression {
         forEachIndexed { index, c ->
             when (c) {
                 ' ' -> if (depth == 1) {
-                    if (spaceIndex == -1) spaceIndex = index else stop()
+                    if (spaceIndex == -1) spaceIndex = index else stop("Illegal space")
                 }
                 '(' -> depth++
                 ')' -> depth--
             }
-            if (depth < 1 && index < lastIndex) stop()
+            if (depth < 1 && index < lastIndex) stop("Illegal character after final ')'")
         }
-        if (spaceIndex == length) stop()
+        if (spaceIndex == length) stop("Illegal final space")
         val function = substring(1, spaceIndex)
         val argument = substring(spaceIndex + 1, lastIndex)
         return Application(function.parseExpression(), argument.parseExpression())
     }
 
-    if (isEmpty()) stop()
-    return when (first()) {
-        '(' -> parseApplication()
-        'λ' -> parseFunction()
-        else -> parseName()
+    if (isEmpty()) stop("Empty string")
+    with(insertParentheses()) {
+        return when (first()) {
+            '(' -> parseApplication()
+            'λ' -> parseFunction()
+            else -> parseName()
+        }
     }
 }
 
