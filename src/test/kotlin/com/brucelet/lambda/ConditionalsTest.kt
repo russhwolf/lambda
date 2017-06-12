@@ -2,37 +2,53 @@ package com.brucelet.lambda
 
 import org.junit.Test
 
-class ConditionalsTest {
+class ConditionalsTest : BaseParserTest() {
+    override fun Parser.initialize() {
+        parseLines("""
+        #def identity x = x
+        #def self_apply s = s s
+        #def apply func arg = func arg
+        #def select_first first second = first
+        #def select_second first second = second
+        #def make_pair e1 e2 c = c e1 e2
+        #def cond = make_pair
+        #def true = select_first
+        #def false = select_second
+        #def not x = x false true
+        #def and x y = x y false
+        #def or x y = x true y
+        """)
+    }
+
     @Test fun cond() {
         val x = "λc.((c a) b)"
-        "(($COND a) b)".assertReducesTo(x)
-        "($x $TRUE)".assertReducesTo("a")
-        "($x $FALSE)".assertReducesTo("b")
+        "((cond a) b)" assertResult x
+        "($x true)" assertResult "a"
+        "($x false)" assertResult "b"
     }
 
     @Test fun not() {
-        val x = "λx.((($COND $FALSE) $TRUE) x)"
-        x.assertReducesTo("$NOT")
-        "($NOT $TRUE)".assertReducesTo("$FALSE")
-        "($NOT $FALSE)".assertReducesTo("$TRUE")
+        val x = "λx.(((cond false) true) x)"
+        x assertResult "not"
+        "(not true)" assertResult "false"
+        "(not false)" assertResult "true"
     }
 
     @Test fun and() {
-        val x = "λx.λy.((($COND y) $FALSE) x)"
-        x.assertReducesTo("$AND")
-        "(($AND $FALSE) $FALSE)".assertReducesTo("$FALSE")
-        "(($AND $FALSE) $TRUE)".assertReducesTo("$FALSE")
-        "(($AND $TRUE) $FALSE)".assertReducesTo("$FALSE")
-        "(($AND $TRUE) $TRUE)".assertReducesTo("$TRUE")
+        val x = "λx.λy.(((cond y) false) x)"
+        x assertResult "and"
+        "((and false) false)" assertResult "false"
+        "((and false) true)" assertResult "false"
+        "((and true) false)" assertResult "false"
+        "((and true) true)" assertResult "true"
     }
 
     @Test fun or() {
-        val x = "λx.λy.((($COND $TRUE) y) x)"
-        x.assertReducesTo("$OR")
-        "(($OR $FALSE) $FALSE)".assertReducesTo("$FALSE")
-        "(($OR $FALSE) $TRUE)".assertReducesTo("$TRUE")
-        // TODO auto-detect substitution instead of manual
-        "(($OR $TRUE) $FALSE)".substitute("y", "second").assertReducesTo("$TRUE")
-        "(($OR $TRUE) $TRUE)".substitute("y", "second").assertReducesTo("$TRUE")
+        val x = "λx.λy.(((cond true) y) x)"
+        x assertResult "or"
+        "((or false) false)" assertResult "false"
+        "((or false) true)" assertResult "true"
+        "((or true) false)" assertResult "true"
+        "((or true) true)" assertResult "true"
     }
 }

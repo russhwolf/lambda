@@ -6,9 +6,9 @@ class ParserTest : BaseParserTest() {
 
     override fun Parser.initialize() {
         parseLines("""
-                #def identity x = x
-                #def self_apply s = s s
-                """)
+        #def identity x = x
+        #def self_apply s = s s
+        """)
     }
 
     @Test fun defineAndParse() {
