@@ -180,9 +180,6 @@ fun String.parseExpression(): Expression {
     }
 }
 
-fun String.parseAndReduce() = parseExpression().reduce()
-fun String.substitute(from: String, to: String) = parseExpression().substitute(from, to).toString()
-
 infix fun String.isFreeIn(expression: Expression) = Name(this) isFreeIn expression
 infix fun String.isFreeIn(name: String) = Name(this) isFreeIn name
 infix fun String.isBoundIn(expression: Expression) = Name(this) isBoundIn expression

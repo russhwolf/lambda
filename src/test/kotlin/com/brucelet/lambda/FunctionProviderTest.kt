@@ -15,13 +15,13 @@ class FunctionProviderTest {
 
     @Test fun replaceNamesWithFunctions() {
         with(functionProvider) {
-            "identity".parseExpression().replaceNamesWithFunctions().toString().assertEquals("λx.x")
+            "identity".parseExpression().replaceNamesWithFunctions().toString() assertEquals "λx.x"
         }
     }
 
     @Test fun replaceFunctionsWithNames() {
         with(functionProvider) {
-            "λx.x".parseExpression().replaceFunctionsWithNames().toString().assertEquals("identity")
+            "λx.x".parseExpression().replaceFunctionsWithNames().toString() assertEquals "identity"
         }
     }
 
@@ -29,17 +29,17 @@ class FunctionProviderTest {
         val newExpression = "λfunc.λarg.(func arg)".parseExpression()
         val newName = "apply"
         with(functionProvider) {
-            newName.parseExpression().replaceNamesWithFunctions().assertEquals(newName.parseExpression())
+            newName.parseExpression().replaceNamesWithFunctions() assertEquals newName.parseExpression()
             registerFunction(newName, newExpression)
-            newName.parseExpression().replaceNamesWithFunctions().assertEquals(newExpression)
-            newExpression.replaceFunctionsWithNames().assertEquals(newName.parseExpression())
+            newName.parseExpression().replaceNamesWithFunctions() assertEquals newExpression
+            newExpression.replaceFunctionsWithNames() assertEquals newName.parseExpression()
         }
     }
 
     @Test fun replaceParseAndReduce() {
         val expression = "(identity self_apply)"
         with(functionProvider) {
-            expression.parseExpression().replaceNamesWithFunctions().reduce().replaceFunctionsWithNames().toString().assertEquals("self_apply")
+            expression.parseExpression().replaceNamesWithFunctions().reduce().replaceFunctionsWithNames().toString() assertEquals "self_apply"
         }
     }
 }

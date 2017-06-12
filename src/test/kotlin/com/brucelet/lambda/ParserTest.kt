@@ -14,6 +14,6 @@ class ParserTest : BaseParserTest() {
     @Test fun defineAndParse() {
         "identity a" assertResult "a"
         "self_apply a" assertResult "(a a)"
-        outputLines.size.assertEquals(2)
+        outputLines.size assertEquals 2
     }
 }
