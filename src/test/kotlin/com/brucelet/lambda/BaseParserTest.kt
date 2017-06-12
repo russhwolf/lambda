@@ -30,6 +30,12 @@ open class BaseParserTest {
         outputLines[outputLines.lastIndex - 1] assertEquals outputLines.last()
     }
 
+    infix fun String.assertSameAction(that: String) {
+        parser.parseLine("($this a)")
+        parser.parseLine("($that a)")
+        outputLines[outputLines.lastIndex - 1] assertEquals outputLines.last()
+    }
+
     infix fun String.assertNotSameResult(that: String) {
         parser.parseLine(this)
         parser.parseLine(that)

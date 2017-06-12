@@ -17,41 +17,17 @@ class Chapter2Exercises : BaseParserTest() {
     }
 
     @Test fun `2`() {
-        with(parser) {
-            parseLines("""
-            λp.λq.p
-            ((λx.λy.(y x) λp.λq.p) λi.i)
-            λj.j
-            (((λx.λy.λz.((x y) z) λf.λa.(f a)) λi.i) λj.j)
-            (λf.(f f) λf.(f f))
-            (λh.((λa.λf.(f a) h) h) λf.(f f))
-            λb.λk.k
-            ((λp.λq.(p q) (λx.x λa.λb.a)) λk.k)
-            λb.b
-            (((λf.λg.λx.(f (g x)) λs.(s s)) λa.λb.b) λx.λy.x)
-            """)
-        }
-        outputLines[0] assertEquals outputLines[1]
-        outputLines[2] assertEquals outputLines[3]
-        outputLines[4] assertEquals outputLines[5]
-        outputLines[6] assertEquals outputLines[7]
-        outputLines[8] assertEquals outputLines[9]
+        "λp.λq.p" assertSameResult "((λx.λy.(y x) λp.λq.p) λi.i)"
+        "λj.j" assertSameResult "(((λx.λy.λz.((x y) z) λf.λa.(f a)) λi.i) λj.j)"
+        "(λf.(f f) λf.(f f))" assertSameResult "(λh.((λa.λf.(f a) h) h) λf.(f f))"
+        "λb.λk.k" assertSameResult "((λp.λq.(p q) (λx.x λa.λb.a)) λk.k)"
+        "λb.b" assertSameResult "(((λf.λg.λx.(f (g x)) λs.(s s)) λa.λb.b) λx.λy.x)"
     }
 
     @Test fun `3`() {
-        with(parser) {
-            parseLines("""
-            (identity a)
-            ((apply (apply identity)) a)
-            (apply a)
-            (λx.λy.(((make_pair x) y) identity) a)
-            (identity a)
-            ((self_apply (self_apply select_second)) a)
-            """)
-        }
-        outputLines[0] assertEquals outputLines[1]
-        outputLines[2] assertActsAs outputLines[3]
-        outputLines[4] assertEquals outputLines[5]
+        "(identity a)" assertSameResult "((apply (apply identity)) a)"
+        "(apply a)" assertSameAction "(λx.λy.(((make_pair x) y) identity) a)"
+        "(identity a)" assertSameResult "((self_apply (self_apply select_second)) a)"
     }
 
     @Test fun `4`() {
@@ -61,9 +37,6 @@ class Chapter2Exercises : BaseParserTest() {
             #def triplet_first = λfirst.λsecond.λthird.first
             #def triplet_second = λfirst.λsecond.λthird.second
             #def triplet_third = λfirst.λsecond.λthird.third
-            ((((make_triplet a) b) c) triplet_first)
-            ((((make_triplet a) b) c) triplet_second)
-            ((((make_triplet a) b) c) triplet_third)
             """)
         }
 
