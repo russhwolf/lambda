@@ -1,28 +1,19 @@
 package com.brucelet.lambda
 
-import org.junit.Before
 import org.junit.Test
 
-class ParserTest {
-    lateinit var parser: Parser
+class ParserTest : BaseParserTest() {
 
-    val outputLines = mutableListOf<String>()
-
-    @Before fun setupParser() {
-        outputLines.clear()
-        parser = Parser { outputLines.add(it) }
+    override fun Parser.initialize() {
+        parseLines("""
+                #def identity x = x
+                #def self_apply s = s s
+                """)
     }
 
     @Test fun defineAndParse() {
-        parser.parseLines("""
-                #def identity x = x
-                #def self_apply s = s s
-                identity a
-                self_apply a
-                """.trimIndent())
-
+        "identity a" assertResult "a"
+        "self_apply a" assertResult "(a a)"
         outputLines.size.assertEquals(2)
-        outputLines[0].assertEquals("a")
-        outputLines[1].assertEquals("(a a)")
     }
 }

@@ -11,7 +11,7 @@ class Parser(val output: (String) -> Unit = ::println) {
         }
     }
 
-    fun parseLines(lines: String) = lines.split("\n").forEach { parseLine(it) }
+    fun parseLines(lines: String) = lines.trimIndent().split("\n").forEach { parseLine(it) }
 
     private fun String.parseKeywords() {
         val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
@@ -28,7 +28,9 @@ class Parser(val output: (String) -> Unit = ::println) {
                     }
                     '(' -> depth++
                     ')' -> depth--
-                    else -> currentToken += c
+                }
+                if (!(depth == 0 && c == ' ')) {
+                    currentToken += c
                 }
             }
             tokens += (currentToken)
