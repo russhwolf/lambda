@@ -21,6 +21,18 @@ open class BaseParserTest {
 
     infix fun String.assertResult(that: String) {
         parser.parseLine(this)
-        outputLines.last().assertEquals(that)
+        outputLines.last() assertEquals that
+    }
+
+    infix fun String.assertSameResult(that: String) {
+        parser.parseLine(this)
+        parser.parseLine(that)
+        outputLines[outputLines.lastIndex - 1] assertEquals outputLines.last()
+    }
+
+    infix fun String.assertNotSameResult(that: String) {
+        parser.parseLine(this)
+        parser.parseLine(that)
+        outputLines[outputLines.lastIndex - 1] assertNotEquals outputLines.last()
     }
 }

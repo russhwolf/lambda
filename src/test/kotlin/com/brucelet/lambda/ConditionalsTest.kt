@@ -22,21 +22,19 @@ class ConditionalsTest : BaseParserTest() {
 
     @Test fun cond() {
         val x = "λc.((c a) b)"
-        "((cond a) b)" assertResult x
+        "((cond a) b)" assertResult "λc.((c a) b)"
         "($x true)" assertResult "a"
         "($x false)" assertResult "b"
     }
 
     @Test fun not() {
-        val x = "λx.(((cond false) true) x)"
-        x assertResult "not"
+        "λx.(((cond false) true) x)" assertResult "not"
         "(not true)" assertResult "false"
         "(not false)" assertResult "true"
     }
 
     @Test fun and() {
-        val x = "λx.λy.(((cond y) false) x)"
-        x assertResult "and"
+        "λx.λy.(((cond y) false) x)" assertResult "and"
         "((and false) false)" assertResult "false"
         "((and false) true)" assertResult "false"
         "((and true) false)" assertResult "false"
@@ -44,8 +42,7 @@ class ConditionalsTest : BaseParserTest() {
     }
 
     @Test fun or() {
-        val x = "λx.λy.(((cond true) y) x)"
-        x assertResult "or"
+        "λx.λy.(((cond true) y) x)" assertResult "or"
         "((or false) false)" assertResult "false"
         "((or false) true)" assertResult "true"
         "((or true) false)" assertResult "true"

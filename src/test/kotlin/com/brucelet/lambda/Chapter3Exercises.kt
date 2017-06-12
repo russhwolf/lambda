@@ -1,53 +1,69 @@
 package com.brucelet.lambda
 
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
-class Chapter3Exercises {
-    // a ? b : c  ==>  ((($COND b) c) a)  ==>  ((a b) c)
-
-    // x ? y : true
-    val implies = "λx.λy.((x y) $TRUE)".parseExpression()
-    // x ? y : !y
-    val equiv = "λx.λy.((x y) ($NOT y))".parseExpression()
+class Chapter3Exercises : BaseParserTest() {
+    override fun Parser.initialize() {
+        parseLines("""
+        #def identity x = x
+        #def self_apply s = s s
+        #def apply func arg = func arg
+        #def select_first first second = first
+        #def select_second first second = second
+        #def make_pair e1 e2 c = c e1 e2
+        #def cond = make_pair
+        #def true = select_first
+        #def false = select_second
+        #def not x = x false true
+        #def and x y = x y false
+        #def or x y = x true y
+        #def zero = identity
+        #def succ = λn.λs.((s false) n)
+        #def iszero = λn.(n select_first)
+        #def pred = λn.(((iszero n) zero) (n select_second))
+        #def implies x y = x y true
+        #def equiv x y = x y (not y)
+        """)
+    }
 
     @Test fun `1`() {
-        val x = "λx.λy.((($COND y) $TRUE) x)"
-        x.assertReducesTo("$implies")
-        "(($implies $FALSE) $FALSE)".assertReducesTo("$TRUE")
-        "(($implies $FALSE) $TRUE)".assertReducesTo("$TRUE")
-        "(($implies $TRUE) $FALSE)".assertReducesTo("$FALSE")
-        "(($implies $TRUE) $TRUE)".assertReducesTo("$TRUE")
+        "λx.λy.(cond y true x)" assertResult "implies"
+        "implies false false" assertResult "true"
+        "implies false true" assertResult "true"
+        "implies true false" assertResult "false"
+        "implies true true" assertResult "true"
     }
 
     @Test fun `2`() {
-        val x = "λx.λy.((($COND y) ($NOT y)) x)"
-        assertParseAndReduceEquals(x, "$equiv")
-        "(($equiv $FALSE) $FALSE)".assertReducesTo("$TRUE")
-        "(($equiv $FALSE) $TRUE)".assertReducesTo("$FALSE")
-        "(($equiv $TRUE) $FALSE)".assertReducesTo("$FALSE")
-        "(($equiv $TRUE) $TRUE)".assertReducesTo("$TRUE")
+        "λx.λy.(cond y (not y) x)" assertSameResult "equiv"
+        "equiv false false" assertResult "true"
+        "equiv false true" assertResult "false"
+        "equiv true false" assertResult "false"
+        "equiv true true" assertResult "true"
     }
 
     @Test fun `3`() {
-        `3 helper`("λx.λy.(($AND ($NOT x)) ($NOT y))", "λx.λy.($NOT (($OR x) y))")
-        `3 helper`("$implies", "λx.λy.(($implies ($NOT y)) ($NOT x))")
-        `3 helper`("$NOT", "λx.($NOT ($NOT ($NOT x)))") // NB this is fine, 2nd arg is just ignored
-        `3 helper`("$implies", "λx.λy.($NOT (($AND x) ($NOT y)))")
-        `3 helper`("$equiv", "λx.λy.(($AND (($implies x) y)) (($implies y) x))")
+        `3 helper`("λx.λy.((and (not x)) (not y))", "λx.λy.(not ((or x) y))")
+        `3 helper`("implies", "λx.λy.((implies (not y)) (not x))")
+        `3 helper`("not", "λx.(not (not (not x)))") // NB this is fine, 2nd arg is just ignored
+        `3 helper`("implies", "λx.λy.(not ((and x) (not y)))")
+        `3 helper`("equiv", "λx.λy.((and ((implies x) y)) ((implies y) x))")
     }
 
     fun `3 helper`(a: String, b: String) {
-        assertParseAndReduceEquals("(($a $FALSE) $FALSE)", "(($b $FALSE) $FALSE)")
-        assertParseAndReduceEquals("(($a $FALSE) $TRUE)", "(($b $FALSE) $TRUE)")
-        assertParseAndReduceEquals("(($a $TRUE) $FALSE)", "(($b $TRUE) $FALSE)")
-        assertParseAndReduceEquals("(($a $TRUE) $TRUE)", "(($b $TRUE) $TRUE)")
+        "$a false false" assertSameResult "$b false false"
+        "$a false true" assertSameResult "$b false true"
+        "$a true false" assertSameResult "$b true false"
+        "$a true true" assertSameResult "$b true true"
     }
 
     @Test fun `4`() {
-        val arg = "($SUCC a)" // A generic number is the successor of something
-        assertParseAndReduceEquals("(λx.($SUCC ($PRED x)) $arg)", "(λx.($PRED ($SUCC x)) $arg)")
-        // These will not be equal, because PRED only undoes SUCC for an argument which has had SUCC applied to it
-        assertNotEquals("(λx.($SUCC ($PRED x)) $ZERO)".parseAndReduce(), "(λx.($PRED ($SUCC x)) $ZERO)".parseAndReduce())
+        with(parser) {
+            parseLine("#def arg = succ a")  // A generic number is the successor of something
+        }
+        "(λx.(succ (pred x)) arg)" assertSameResult "(λx.(pred (succ x)) arg)"
+
+//        // These will not be equal, because PRED only undoes SUCC for an argument which has had SUCC applied to it
+        "(λx.(succ (pred x)) zero)" assertNotSameResult "(λx.(pred (succ x)) zero)"
     }
 }
