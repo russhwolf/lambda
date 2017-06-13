@@ -1,10 +1,12 @@
 package com.brucelet.lambda
 
+import org.junit.Ignore
 import org.junit.Test
 
 class MathTest : BaseParserTest() {
     override fun Parser.initialize() {
         parseLines("""
+        #def recursive f = λs.(f (s s)) λs.(f (s s))
         #def identity x = x
         #def self_apply s = s s
         #def apply func arg = func arg
@@ -32,16 +34,15 @@ class MathTest : BaseParserTest() {
         #def seven = λs.(s false six)
         #def eight = λs.(s false seven)
         #def nine = λs.(s false eight)
-        #def recursive f = λs.(f (s s)) λs.(f (s s))
-        #def add = recursive λf.λx.λy.(cond x (f (succ x) (pred y)) (iszero y))
-        #def mult = recursive λf.λx.λy.(cond zero (add x (f x (pred y))) (iszero y))
-        #def power = recursive λf.λx.λy.(cond one (mult x (f x (pred y))) (iszero y))
-        #def sub = recursive λf.λx.λy.(cond x (f (pred x) (pred y)) (iszero y))
+        #rec add x y = iszero y x (add (succ x) (pred y))
+        #rec mult x y = iszero y zero (add x (mult x (pred y)))
+        #rec power x y = iszero y one (mult x (power x (pred y)))
+        #rec sub x y = iszero y x (sub (pred x) (pred y))
         #def abs_diff x y = add (sub x y) (sub y x)
         #def equal x y = iszero (abs_diff x y)
         #def greater x y = not (iszero (sub x y))
         #def greater_or_equal x y = iszero (sub y x)
-        #def div = recursive λf.λx.λy.(cond zero (succ (f (sub x y) y)) (greater y x))
+        #rec div x y = (greater y x) zero (succ (div (sub x y) y))
         """)
     }
 
@@ -62,16 +63,18 @@ class MathTest : BaseParserTest() {
         "power two two" assertResult "four"
     }
 
+    @Ignore
     @Test
     fun twoCubedTest() {
-        // TODO this failed to complete after 30 min
-//        "power two three" assertResult "eight"
+        // TODO this failed to complete after 10hr
+        "power two three" assertResult "eight"
     }
 
+    @Ignore
     @Test
     fun threeSquaredTest() {
         // TODO this takes ~40s to complete
-//        "power three two" assertResult "nine"
+        "power three two" assertResult "nine"
     }
 
     @Test

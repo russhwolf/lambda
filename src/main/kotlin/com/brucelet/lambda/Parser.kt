@@ -16,7 +16,7 @@ class Parser(val output: (String) -> Unit = ::println) {
     private fun String.parseKeywords() {
         val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
 
-        if (startsWith("#def ")) {
+        if (startsWith("#def ") || startsWith("#rec ")) {
             val tokens = mutableListOf<String>()
             var currentToken = ""
             var depth = 0
@@ -40,8 +40,14 @@ class Parser(val output: (String) -> Unit = ::println) {
             val name = tokens[1]
             val params = (2..equalsIndex - 1).map { tokens[it] }.fold("") { params, a -> params + "λ$a." }
             val body = (equalsIndex + 1..tokens.lastIndex).map { tokens[it] }.reduce { a, b -> "$a $b" }
-            val function = if (equalsIndex + 1 == tokens.lastIndex) "$params$body" else "$params($body)"
-            functionProvider.registerFunction(name, function.parseExpression())
+            if (startsWith("#def")) {
+                val function = if (equalsIndex + 1 == tokens.lastIndex) "$params$body" else "$params($body)"
+                functionProvider.registerFunction(name, function.parseExpression())
+            } else if (startsWith("#rec")) {
+                val recursiveBody = body.parseExpression().substitute(name, "f").toString()
+                val recursiveDef = "#def $name = recursive λf.$params$recursiveBody"
+                recursiveDef.parseKeywords()
+            }
         } else {
             stop("Invalid keyword")
         }
