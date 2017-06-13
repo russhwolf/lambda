@@ -42,7 +42,8 @@ class MathTest : BaseParserTest() {
         #def equal x y = iszero (abs_diff x y)
         #def greater x y = not (iszero (sub x y))
         #def greater_or_equal x y = iszero (sub y x)
-        #rec div x y = (greater y x) zero (succ (div (sub x y) y))
+        #rec div1 x y = (greater y x) zero (succ (div1 (sub x y) y))
+        #def div x y = iszero y zero (div1 x y)
         """)
     }
 
