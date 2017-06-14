@@ -1,6 +1,6 @@
 package com.brucelet.lambda
 
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ExpressionTest {
@@ -37,20 +37,6 @@ class ExpressionTest {
         assertEquals(Application("C", "B"), Application("A", "B").substitute(from = "A", to = "C"))
         assertEquals(Application(Function("C", "D"), "B"), Application("A", "B").substitute(Name("A"), Function("C", "D")))
         assertEquals(Application("A", "B"), Application(Function("C", "D"), "B").substitute(Function("C", "D"), Name("A")))
-    }
-
-    @Test fun isBound() {
-        assertFalse("A" isBoundIn "A")
-        assertTrue("A" isBoundIn Function("A", "A"))
-        assertTrue("F" isBoundIn Function("F", Application("F", Function("X", "X"))))
-        assertFalse("F" isBoundIn Application("F", Function("X", "X")))
-    }
-
-    @Test fun isFree() {
-        assertTrue("A" isFreeIn "A")
-        assertFalse("A" isFreeIn Function("A", "A"))
-        assertFalse("F" isFreeIn Function("F", Application("F", Function("X", "X"))))
-        assertTrue("F" isFreeIn Application("F", Function("X", "X")))
     }
 
     @Test fun reduce() {

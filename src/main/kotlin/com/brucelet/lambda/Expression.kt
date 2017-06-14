@@ -3,6 +3,7 @@ package com.brucelet.lambda
 sealed class Expression {
     abstract fun substitute(from: Expression, to: Expression): Expression
     fun substitute(from: String, to: String) = substitute(Name(from), Name(to))
+    abstract fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression
 
     abstract fun canReduce(): Boolean
     abstract fun reduceOnce(): Expression
@@ -21,26 +22,14 @@ sealed class Expression {
 }
 
 data class Name(private val label: String) : Expression() {
-    override fun substitute(from: Expression, to: Expression) = if (this == from) to else this
-    override fun reduceOnce() = this
-    override fun canReduce() = false
+    override fun substitute(from: Expression, to: Expression): Expression = if (this == from) to else this
+    override fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression
+            = if (this == from && !boundNames.contains(from)) to else this
+
+    override fun reduceOnce(): Expression = this
+    override fun canReduce(): Boolean = false
 
     override fun toString() = label
-
-    infix fun isBoundIn(expression: Expression): Boolean = when (expression) {
-        is Name -> false
-        is Function -> this == expression.name || this isBoundIn expression.body
-        is Application -> this isBoundIn expression.function || this isBoundIn expression.argument
-    }
-
-    infix fun isFreeIn(expression: Expression): Boolean = when (expression) {
-        is Name -> this == expression
-        is Function -> this != expression.name && this isFreeIn expression.body
-        is Application -> this isFreeIn expression.function || this isFreeIn expression.argument
-    }
-
-    infix fun isFreeIn(name: String) = this isFreeIn Name(name)
-    infix fun isBoundIn(name: String) = this isBoundIn Name(name)
 }
 
 data class Function(val name: Name, val body: Expression) : Expression() {
@@ -51,6 +40,13 @@ data class Function(val name: Name, val body: Expression) : Expression() {
         this == from -> to
         name == from && to is Name -> Function(to, body.substitute(from, to))
         name != from -> Function(name, body.substitute(from, to))
+        else -> this
+    }
+
+    override fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression = when {
+        boundNames.contains(from) -> this
+        name == from && to is Name -> Function(to, body.substituteWhereFree(from, to, boundNames.apply { add(to) }))
+        name != from -> Function(name, body.substituteWhereFree(from, to, boundNames.apply { add(name) }))
         else -> this
     }
     override fun reduceOnce(): Expression = Function(name, body.reduceOnce())
@@ -64,13 +60,17 @@ data class Application(val function: Expression, val argument: Expression) : Exp
     constructor(name: Expression, body: String) : this(name, Name(body))
     constructor(name: String, body: String) : this(Name(name), Name(body))
 
-    override fun substitute(from: Expression, to: Expression) = when {
-        this == from -> to
+    override fun substitute(from: Expression, to: Expression) = when (from) {
+        this -> to
         else -> Application(function.substitute(from, to), argument.substitute(from, to))
     }
 
+    override fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression =
+            Application(function.substituteWhereFree(from, to, boundNames), argument.substituteWhereFree(from, to, boundNames))
+
     override fun reduceOnce(): Expression = when {
-        function is Function -> function.body.substitute(from = function.name, to = argument)
+        function is Application && function.canReduce() -> Application(function.reduceOnce(), argument)
+        function is Function -> function.body.substituteWhereFree(function.name, argument, mutableSetOf())
         function.canReduce() -> Application(function.reduceOnce(), argument)
         argument.canReduce() -> Application(function, argument.reduceOnce())
         else -> this
@@ -179,10 +179,5 @@ fun String.parseExpression(): Expression {
         }
     }
 }
-
-infix fun String.isFreeIn(expression: Expression) = Name(this) isFreeIn expression
-infix fun String.isFreeIn(name: String) = Name(this) isFreeIn name
-infix fun String.isBoundIn(expression: Expression) = Name(this) isBoundIn expression
-infix fun String.isBoundIn(name: String) = Name(this) isBoundIn name
 
 
