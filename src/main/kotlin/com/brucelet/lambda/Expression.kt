@@ -3,7 +3,6 @@ package com.brucelet.lambda
 sealed class Expression {
     abstract fun substitute(from: Expression, to: Expression): Expression
     fun substitute(from: String, to: String) = substitute(Name(from), Name(to))
-    abstract fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression
 
     abstract fun canReduce(): Boolean
     abstract fun reduceOnce(): Expression
@@ -23,8 +22,6 @@ sealed class Expression {
 
 data class Name(private val label: String) : Expression() {
     override fun substitute(from: Expression, to: Expression): Expression = if (this == from) to else this
-    override fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression
-            = if (this == from && !boundNames.contains(from)) to else this
 
     override fun reduceOnce(): Expression = this
     override fun canReduce(): Boolean = false
@@ -43,12 +40,6 @@ data class Function(val name: Name, val body: Expression) : Expression() {
         else -> this
     }
 
-    override fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression = when {
-        boundNames.contains(from) -> this
-        name == from && to is Name -> Function(to, body.substituteWhereFree(from, to, boundNames.apply { add(to) }))
-        name != from -> Function(name, body.substituteWhereFree(from, to, boundNames.apply { add(name) }))
-        else -> this
-    }
     override fun reduceOnce(): Expression = Function(name, body.reduceOnce())
     override fun canReduce(): Boolean = body.canReduce()
 
@@ -65,12 +56,8 @@ data class Application(val function: Expression, val argument: Expression) : Exp
         else -> Application(function.substitute(from, to), argument.substitute(from, to))
     }
 
-    override fun substituteWhereFree(from: Name, to: Expression, boundNames: MutableSet<Name>): Expression =
-            Application(function.substituteWhereFree(from, to, boundNames), argument.substituteWhereFree(from, to, boundNames))
-
     override fun reduceOnce(): Expression = when {
-        function is Application && function.canReduce() -> Application(function.reduceOnce(), argument)
-        function is Function -> function.body.substituteWhereFree(function.name, argument, mutableSetOf())
+        function is Function -> function.body.substitute(function.name, argument)
         function.canReduce() -> Application(function.reduceOnce(), argument)
         argument.canReduce() -> Application(function, argument.reduceOnce())
         else -> this
