@@ -4,14 +4,21 @@ class Parser(val output: (String) -> Unit = ::println) {
     private val functionProvider = FunctionProvider()
 
     fun parseLine(line: String) = with(functionProvider) {
-        if (line.startsWith("#")) {
-            line.parseKeywords()
+        if (line.isNullOrBlank()) {
+            return
+        }
+
+        val trimmedLine = line
+                .replace(Regex("^\\s+"), "")
+                .replace(Regex("\\s+"), " ")
+        if (trimmedLine.contains("#")) {
+            trimmedLine.parseKeywords()
         } else {
-            output(line.parseExpression().replaceNamesWithFunctions().reduce().replaceFunctionsWithNames().toString())
+            output(trimmedLine.parseExpression().replaceNamesWithFunctions().reduce().replaceFunctionsWithNames().toString())
         }
     }
 
-    fun parseLines(lines: String) = lines.trimIndent().split("\n").forEach { parseLine(it) }
+    fun parseLines(lines: String) = lines.split("\n").forEach { parseLine(it) }
 
     private fun String.parseKeywords() {
         val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
