@@ -40,6 +40,23 @@ class Parser(val output: (String) -> Unit = ::println) {
 //            val conditional = "$start cond $thenBody $elseBody $ifBody"
             val conditional = "$start $ifBody $thenBody $elseBody"
             parseLine(conditional)
+        } else if (contains("#IF") || contains("#THEN") || contains("#ELSE")) {
+            if (!(contains("#IF") && contains("#THEN") && contains("#ELSE"))) {
+                stop("Incomplete conditional expression")
+            }
+            val ifIndex = indexOf("#IF")
+            val thenIndex = indexOf("#THEN")
+            val elseIndex = indexOf("#ELSE")
+            if (ifIndex > thenIndex || thenIndex > elseIndex || ifIndex + 1 == thenIndex || thenIndex + 1 == elseIndex || elseIndex == lastIndex) {
+                stop("Invalid conditional expression")
+            }
+            val start = subList(0, ifIndex).joinToString(" ")
+            val ifBody = rejoin(ifIndex + 1, thenIndex)
+            val thenBody = rejoin(thenIndex + 1, elseIndex)
+            val elseBody = rejoin(elseIndex + 1, size)
+            val conditional = "$start COND $thenBody $elseBody $ifBody"
+//            val conditional = "$start $ifBody $thenBody $elseBody"
+            parseLine(conditional)
         } else if (startsWith("#def") || startsWith("#rec")) {
             val equalsIndex = indexOf("=")
             if (equalsIndex < 0) stop("Missing '='")

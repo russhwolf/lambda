@@ -117,7 +117,7 @@ fun String.parseExpression(): Expression {
 
     fun String.parseName(): Name {
         // Make sure we have no illegal characters anywhere
-        toCharArray().forEach { if (!(it.isLetterOrDigit() || it == '_')) stop("Illegal character '$it'") }
+        toCharArray().forEach { if (!(it.isLetterOrDigit() || "+-*/_".contains(it))) stop("Illegal character '$it'") }
         return Name(this)
     }
 
