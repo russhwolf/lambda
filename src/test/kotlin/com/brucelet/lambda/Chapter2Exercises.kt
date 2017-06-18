@@ -26,7 +26,7 @@ class Chapter2Exercises : BaseParserTest() {
 
     @Test fun `3`() {
         "(identity a)" assertSameResult "((apply (apply identity)) a)"
-        "(apply a)" assertSameAction "(λx.λy.(((make_pair x) y) identity) a)"
+        "((apply a) b)" assertSameResult "((λx.λy.(((make_pair x) y) identity) a) b)"
         "(identity a)" assertSameResult "((self_apply (self_apply select_second)) a)"
     }
 
