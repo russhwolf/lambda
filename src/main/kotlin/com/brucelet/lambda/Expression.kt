@@ -35,7 +35,6 @@ data class Function(val name: Name, val body: Expression) : Expression() {
 
     override fun substitute(from: Expression, to: Expression) = when {
         this == from -> to
-        name == from && to is Name -> Function(to, body.substitute(from, to))
         name != from -> Function(name, body.substitute(from, to))
         else -> this
     }

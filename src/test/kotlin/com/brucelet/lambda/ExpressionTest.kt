@@ -33,7 +33,7 @@ class ExpressionTest {
     @Test fun substitute() {
         assertEquals(Name("B"), Name("A").substitute(from = "A", to = "B"))
         assertEquals(Function("A", "C"), Function("A", "B").substitute(from = "B", to = "C"))
-        assertEquals(Function("C", "B"), Function("A", "B").substitute(from = "A", to = "C"))
+        assertEquals(Function("A", "B"), Function("A", "B").substitute(from = "A", to = "C"))
         assertEquals(Application("C", "B"), Application("A", "B").substitute(from = "A", to = "C"))
         assertEquals(Application(Function("C", "D"), "B"), Application("A", "B").substitute(Name("A"), Function("C", "D")))
         assertEquals(Application("A", "B"), Application(Function("C", "D"), "B").substitute(Function("C", "D"), Name("A")))
