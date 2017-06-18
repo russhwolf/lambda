@@ -6,18 +6,6 @@ sealed class Expression {
 
     abstract fun canReduce(): Boolean
     abstract fun reduceOnce(): Expression
-
-    fun reduce(): Expression {
-        var value: Expression = this
-        while (value.canReduce()) {
-            val nextValue = value.reduceOnce()
-            if (nextValue == value) {
-                break
-            }
-            value = nextValue
-        }
-        return value
-    }
 }
 
 data class Name(private val label: String) : Expression() {
@@ -67,6 +55,14 @@ data class Application(val function: Expression, val argument: Expression) : Exp
     }
 
     override fun toString() = "($function $argument)"
+}
+
+tailrec fun Expression.reduce(): Expression {
+    val next = reduceOnce()
+    if (!next.canReduce() || next == this) {
+        return next
+    }
+    return next.reduce()
 }
 
 fun String.parseExpression(): Expression {
