@@ -80,6 +80,7 @@ class TypesTest : BaseParserTest() {
         #def * X Y = #if both_numbs X Y #then MAKE_NUMB (mult (value X) (value Y)) #else NUMB_ERROR
         #def / X Y = #if both_numbs X Y #then (#if iszero (value Y) #then NUMB_ERROR #else MAKE_NUMB (div1 (value X) (value Y))) #else NUMB_ERROR
         #def EQUAL X Y = #if both_numbs X Y #then MAKE_BOOL (equal (value X) (value Y)) #else NUMB_ERROR
+        #def GREATER X Y = #if both_numbs X Y #then MAKE_BOOL (greater (value X) (value Y)) #else NUMB_ERROR
 
         #def char_type = four
         #def MAKE_CHAR = λvalue.λs.(s char_type value)
@@ -155,6 +156,11 @@ class TypesTest : BaseParserTest() {
         "/ 9 0" assertSameResult "NUMB_ERROR"
         "EQUAL 2 2" assertSameResult "TRUE"
         "EQUAL 2 3" assertSameResult "FALSE"
+        "EQUAL 2 TRUE" assertSameResult "NUMB_ERROR"
+        "GREATER 2 2" assertSameResult "FALSE"
+        "GREATER 2 3" assertSameResult "FALSE"
+        "GREATER 3 2" assertSameResult "TRUE"
+        "GREATER 2 TRUE" assertSameResult "NUMB_ERROR"
     }
 
     @Test fun charType() {
