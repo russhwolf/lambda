@@ -40,6 +40,6 @@ class ExpressionTest {
     }
 
     @Test fun reduce() {
-        assertEquals(Name("B"), Application(Function("A", "A"), "B").reduceOnce())
+        assertEquals(Name("B"), Application(Function("A", "A"), "B").reduce())
     }
 }

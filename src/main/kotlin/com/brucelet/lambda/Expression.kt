@@ -5,13 +5,13 @@ sealed class Expression {
     fun substitute(from: String, to: String) = substitute(Name(from), Name(to))
 
     abstract fun canReduce(): Boolean
-    abstract fun reduceOnce(): Expression
+    abstract fun reduceOnce(parent: Expression, callback: (Expression) -> Unit): Expression
 }
 
 data class Name(private val label: String) : Expression() {
     override fun substitute(from: Expression, to: Expression): Expression = if (this == from) to else this
 
-    override fun reduceOnce(): Expression = this
+    override fun reduceOnce(parent: Expression, callback: (Expression) -> Unit): Expression = this
     override fun canReduce(): Boolean = false
 
     override fun toString() = label
@@ -27,7 +27,10 @@ data class Function(val name: Name, val body: Expression) : Expression() {
         else -> this
     }
 
-    override fun reduceOnce(): Expression = Function(name, body.reduceOnce())
+    override fun reduceOnce(parent: Expression, callback: (Expression) -> Unit): Expression {
+        return Function(name, body.reduceOnce(parent, callback))
+    }
+
     override fun canReduce(): Boolean = body.canReduce()
 
     override fun toString() = "λ$name.$body"
@@ -43,10 +46,15 @@ data class Application(val function: Expression, val argument: Expression) : Exp
         else -> Application(function.substitute(from, to), argument.substitute(from, to))
     }
 
-    override fun reduceOnce(): Expression = when {
-        function is Function -> function.body.substitute(function.name, argument)
-        function.canReduce() -> Application(function.reduceOnce(), argument)
-        argument.canReduce() -> Application(function, argument.reduceOnce())
+    override fun reduceOnce(parent: Expression, callback: (Expression) -> Unit): Expression = when {
+        function is Function -> {
+            val reduced = function.body.substitute(function.name, argument)
+            val substituted = parent.substitute(this, reduced)
+            callback.invoke(substituted)
+            reduced
+        }
+        function.canReduce() -> Application(function.reduceOnce(parent, callback), argument)
+        argument.canReduce() -> Application(function, argument.reduceOnce(parent, callback))
         else -> this
     }
 
@@ -58,7 +66,8 @@ data class Application(val function: Expression, val argument: Expression) : Exp
 }
 
 tailrec fun Expression.reduce(): Expression {
-    val next = reduceOnce()
+    var next = this
+    reduceOnce(this) { next = it }
     if (!next.canReduce() || next == this) {
         return next
     }
