@@ -1,6 +1,5 @@
 package com.brucelet.lambda
 
-import org.junit.Ignore
 import org.junit.Test
 
 class MathTest : BaseParserTest() {
@@ -71,19 +70,7 @@ class MathTest : BaseParserTest() {
         "power two zero" assertResult "one"
         "power two one" assertResult "two"
         "power two two" assertResult "four"
-    }
-
-    @Ignore
-    @Test
-    fun twoCubedTest() {
-        // TODO this failed to complete after 10hr
         "power two three" assertResult "eight"
-    }
-
-    @Ignore
-    @Test
-    fun threeSquaredTest() {
-        // TODO this takes ~40s to complete
         "power three two" assertResult "nine"
     }
 

@@ -85,8 +85,7 @@ class Chapter4Exercises : BaseParserTest() {
         #def double x = add x x
         """)
 
-        // TODO long
-//        "fun_sum_step double five two" assertSameResult "eighteen"
+        "fun_sum_step double five two" assertSameResult "eighteen"
         "fun_sum_step double four two" assertSameResult "twelve"
     }
 
