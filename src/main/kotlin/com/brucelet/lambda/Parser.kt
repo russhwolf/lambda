@@ -20,43 +20,53 @@ class Parser(val output: (String) -> Unit = ::println) {
 
     fun parseLines(lines: String) = lines.split("\n").forEach { parseLine(it) }
 
+    private fun String.parseConditionals(ifToken: String, thenToken: String, elseToken: String, condToken: String): String {
+        val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
+
+        val innerParsed = with(tokenize()) {
+            map {
+                if (!it.startsWith('(')) {
+                    it
+                } else {
+                    if (!it.endsWith(')')) {
+                        stop("Unbalanced parens in conditional")
+                    }
+
+                    val inner = it.substring(1, it.length - 1)
+                    inner.parseConditionals(ifToken, thenToken, elseToken, condToken)
+                }
+            }
+        }
+        return with(innerParsed) {
+            if (contains(ifToken) || contains(thenToken) || contains(elseToken)) {
+                if (!(contains(ifToken) && contains(thenToken) && contains(elseToken))) {
+                    stop("Incomplete conditional expression")
+                }
+                val ifIndex = indexOf(ifToken)
+                val thenIndex = indexOf(thenToken)
+                val elseIndex = indexOf(elseToken)
+                if (ifIndex > thenIndex || thenIndex > elseIndex || ifIndex + 1 == thenIndex || thenIndex + 1 == elseIndex || elseIndex == lastIndex) {
+                    stop("Invalid conditional expression")
+                }
+                val start = subList(0, ifIndex).joinToString(" ")
+                val ifBody = rejoin(ifIndex + 1, thenIndex)
+                val thenBody = rejoin(thenIndex + 1, elseIndex)
+                val elseBody = rejoin(elseIndex + 1, size)
+                val conditional = "$start ((($condToken $thenBody) $elseBody) $ifBody)"
+                conditional
+            } else {
+                rejoin()
+            }
+        }
+    }
+
     private fun String.parseKeywords(): Unit = with(tokenize()) {
         val stop = { message: String -> throw IllegalArgumentException("$message in '$this'") }
 
         if (contains("#if") || contains("#then") || contains("#else")) {
-            if (!(contains("#if") && contains("#then") && contains("#else"))) {
-                stop("Incomplete conditional expression")
-            }
-            val ifIndex = indexOf("#if")
-            val thenIndex = indexOf("#then")
-            val elseIndex = indexOf("#else")
-            if (ifIndex > thenIndex || thenIndex > elseIndex || ifIndex + 1 == thenIndex || thenIndex + 1 == elseIndex || elseIndex == lastIndex) {
-                stop("Invalid conditional expression")
-            }
-            val start = subList(0, ifIndex).joinToString(" ")
-            val ifBody = rejoin(ifIndex + 1, thenIndex)
-            val thenBody = rejoin(thenIndex + 1, elseIndex)
-            val elseBody = rejoin(elseIndex + 1, size)
-//            val conditional = "$start cond $thenBody $elseBody $ifBody"
-            val conditional = "$start $ifBody $thenBody $elseBody"
-            parseLine(conditional)
+            parseLine(parseConditionals("#if", "#then", "#else", "cond"))
         } else if (contains("#IF") || contains("#THEN") || contains("#ELSE")) {
-            if (!(contains("#IF") && contains("#THEN") && contains("#ELSE"))) {
-                stop("Incomplete conditional expression")
-            }
-            val ifIndex = indexOf("#IF")
-            val thenIndex = indexOf("#THEN")
-            val elseIndex = indexOf("#ELSE")
-            if (ifIndex > thenIndex || thenIndex > elseIndex || ifIndex + 1 == thenIndex || thenIndex + 1 == elseIndex || elseIndex == lastIndex) {
-                stop("Invalid conditional expression")
-            }
-            val start = subList(0, ifIndex).joinToString(" ")
-            val ifBody = rejoin(ifIndex + 1, thenIndex)
-            val thenBody = rejoin(thenIndex + 1, elseIndex)
-            val elseBody = rejoin(elseIndex + 1, size)
-            val conditional = "$start COND $thenBody $elseBody $ifBody"
-//            val conditional = "$start $ifBody $thenBody $elseBody"
-            parseLine(conditional)
+            parseLine(parseConditionals("#IF", "#THEN", "#ELSE", "COND"))
         } else if (startsWith("#def") || startsWith("#rec")) {
             val equalsIndex = indexOf("=")
             if (equalsIndex < 0) stop("Missing '='")

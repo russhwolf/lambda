@@ -89,7 +89,7 @@ class TypesTest : BaseParserTest() {
         #def ISNUMB N = MAKE_BOOL (isnumb N)
         #def 0 = λs.(s numb_type zero)
         #def SUCC N = #if isnumb N #then MAKE_NUMB (succ (value N)) #else NUMB_ERROR
-        #def PRED N = #if isnumb N #then (iszero (value N)) NUMB_ERROR (MAKE_NUMB ((value N) select_second)) #else NUMB_ERROR
+        #def PRED N = #if isnumb N #then (#if iszero (value N) #then NUMB_ERROR #else MAKE_NUMB ((value N) select_second)) #else NUMB_ERROR
         #def 1 = λs.(s numb_type one)
         #def 2 = λs.(s numb_type two)
         #def 3 = λs.(s numb_type three)
@@ -104,7 +104,7 @@ class TypesTest : BaseParserTest() {
         #def + X Y = #if both_numbs X Y #then MAKE_NUMB (add (value X) (value Y)) #else NUMB_ERROR
         #def - X Y = #if both_numbs X Y #then MAKE_NUMB (sub (value X) (value Y)) #else NUMB_ERROR
         #def * X Y = #if both_numbs X Y #then MAKE_NUMB (mult (value X) (value Y)) #else NUMB_ERROR
-        #def / X Y = #if both_numbs X Y #then (iszero (value Y)) NUMB_ERROR (MAKE_NUMB (div1 (value X) (value Y))) #else NUMB_ERROR
+        #def / X Y = #if both_numbs X Y #then (#if iszero (value Y) #then NUMB_ERROR #else MAKE_NUMB (div1 (value X) (value Y))) #else NUMB_ERROR
         #def EQUAL X Y = #if both_numbs X Y #then MAKE_BOOL (equal (value X) (value Y)) #else NUMB_ERROR
         """)
     }
@@ -138,6 +138,10 @@ class TypesTest : BaseParserTest() {
         "SUCC 0" assertSameResult "1"
         "SUCC 1" assertSameResult "2"
         "SUCC 2" assertSameResult "3"
+        "PRED 3" assertSameResult "2"
+        "PRED 2" assertSameResult "1"
+        "PRED 1" assertSameResult "0"
+        "PRED 0" assertSameResult "NUMB_ERROR"
 
         "isnumb 0" assertResult "true"
         "isnumb 1" assertResult "true"
@@ -152,6 +156,7 @@ class TypesTest : BaseParserTest() {
         "- 1 2" assertSameResult "0"
         "* 2 3" assertSameResult "6"
         "/ 9 4" assertSameResult "2"
+        "/ 9 0" assertSameResult "NUMB_ERROR"
         "EQUAL 2 2" assertSameResult "TRUE"
         "EQUAL 2 3" assertSameResult "FALSE"
     }
