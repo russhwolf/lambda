@@ -1,30 +1,34 @@
 package com.brucelet.lambda
 
-fun main(vararg args: kotlin.String) {
-    val lines: List<String> = parseInput(args)
-    val parser = generateParser()
-
-    for (line in lines) {
-        try {
-            parser.parseLine(line)
-        } catch (e: IllegalArgumentException) {
-            System.err.println(e.message)
-        }
+fun main(vararg args: kotlin.String) = with(generateParser()) {
+    if (args.isNotEmpty()) {
+        parseInput(args)
+    } else {
+        repl()
     }
 }
 
-private fun parseInput(args: Array<out String>): List<String> = when {
-    args.isEmpty() -> {
-        val lines = mutableListOf<String>()
-        println("insert commands (blank to finish)")
-        while (true) {
-            val line = readLine()
-            if (line.isNullOrEmpty()) break
-            lines.add(line ?: break)
-        }
-        lines
+private fun Parser.parseInput(args: Array<out String>) {
+    for (line in args) {
+        parseInputLine(line)
     }
-    else -> args.asList()
+}
+
+private fun Parser.repl() {
+    println("insert commands (#exit to finish)")
+    while (true) {
+        val line = readLine()
+        if ("#exit" == line?.trim()) break
+        parseInputLine(line)
+    }
+}
+
+private fun Parser.parseInputLine(line: String?) {
+    try {
+        parseLine(line ?: "")
+    } catch (e: IllegalArgumentException) {
+        System.err.println(e.message)
+    }
 }
 
 private fun generateParser(): Parser = Parser().apply {
