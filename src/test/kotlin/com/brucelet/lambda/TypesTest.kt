@@ -4,6 +4,9 @@ import org.junit.Test
 
 class TypesTest : BaseParserTest() {
     override fun Parser.initialize() {
+        parseUntypedNumbers()
+        parseTypedNumbers()
+        parseTypedChars()
         parseLines("""
         #def recursive f = λs.(f (s s)) λs.(f (s s))
 
@@ -21,30 +24,11 @@ class TypesTest : BaseParserTest() {
         #def and x y = #if x #then y #else false
         #def or x y = #if x #then true #else y
 
-        #def zero = identity
         #def succ = λn.λs.(s false n)
         #def iszero = λn.(n select_first)
         #def pred n = #if iszero n #then zero #else n select_second
         #def implies x y = #if x #then y #else true
         #def equiv x y = #if x #then y #else (not y)
-        #def one = λs.(s false zero)
-        #def two = λs.(s false one)
-        #def three = λs.(s false two)
-        #def four = λs.(s false three)
-        #def five = λs.(s false four)
-        #def six = λs.(s false five)
-        #def seven = λs.(s false six)
-        #def eight = λs.(s false seven)
-        #def nine = λs.(s false eight)
-        #def ten = λs.(s false nine)
-        #def eleven = λs.(s false ten)
-        #def twelve = λs.(s false eleven)
-        #def thirteen = λs.(s false twelve)
-        #def fourteen = λs.(s false thirteen)
-        #def fifteen = λs.(s false fourteen)
-        #def sixteen = λs.(s false fifteen)
-        #def seventeen = λs.(s false sixteen)
-        #def eighteen = λs.(s false seventeen)
 
         #rec add x y = #if iszero y #then x #else add (succ x) (pred y)
         #rec mult x y = #if iszero y #then zero #else add x (mult x (pred y))
@@ -78,7 +62,7 @@ class TypesTest : BaseParserTest() {
         #def NOT X = #if isbool X #then MAKE_BOOL (not (value X)) #else BOOL_ERROR
         #def AND X Y = #if and (isbool X) (isbool Y) #then MAKE_BOOL (and (value X) (value Y)) #else BOOL_ERROR
 
-        #def COND E1 E2 C = #if isbool C #then C E1 E2 #else BOOL_ERROR
+        #def COND E1 E2 C = #if isbool C #then (#if value C #then E1 #else E2) #else BOOL_ERROR
         #def ISERROR E = MAKE_BOOL (iserror E)
         #def ISBOOL B = MAKE_BOOL (isbool B)
 
@@ -87,18 +71,8 @@ class TypesTest : BaseParserTest() {
         #def NUMB_ERROR = λs.(s error_type numb_type)
         #def isnumb = istype numb_type
         #def ISNUMB N = MAKE_BOOL (isnumb N)
-        #def 0 = λs.(s numb_type zero)
         #def SUCC N = #if isnumb N #then MAKE_NUMB (succ (value N)) #else NUMB_ERROR
         #def PRED N = #if isnumb N #then (#if iszero (value N) #then NUMB_ERROR #else MAKE_NUMB ((value N) select_second)) #else NUMB_ERROR
-        #def 1 = λs.(s numb_type one)
-        #def 2 = λs.(s numb_type two)
-        #def 3 = λs.(s numb_type three)
-        #def 4 = λs.(s numb_type four)
-        #def 5 = λs.(s numb_type five)
-        #def 6 = λs.(s numb_type six)
-        #def 7 = λs.(s numb_type seven)
-        #def 8 = λs.(s numb_type eight)
-        #def 9 = λs.(s numb_type nine)
         #def ISZERO N = #if isnumb N #then MAKE_BOOL (iszero (value N)) #else NUMB_ERROR
         #def both_numbs X Y = and (isnumb X) (isnumb Y)
         #def + X Y = #if both_numbs X Y #then MAKE_NUMB (add (value X) (value Y)) #else NUMB_ERROR
@@ -106,6 +80,17 @@ class TypesTest : BaseParserTest() {
         #def * X Y = #if both_numbs X Y #then MAKE_NUMB (mult (value X) (value Y)) #else NUMB_ERROR
         #def / X Y = #if both_numbs X Y #then (#if iszero (value Y) #then NUMB_ERROR #else MAKE_NUMB (div1 (value X) (value Y))) #else NUMB_ERROR
         #def EQUAL X Y = #if both_numbs X Y #then MAKE_BOOL (equal (value X) (value Y)) #else NUMB_ERROR
+
+        #def char_type = four
+        #def MAKE_CHAR = λvalue.λs.(s char_type value)
+        #def CHAR_ERROR = λs.(s error_type char_type)
+        #def ischar = istype char_type
+        #def ISCHAR C = MAKE_BOOL (ischar C)
+
+        #def CHAR_LESS C1 C2 = #if and (ischar C1) (ischar C2) #then MAKE_BOOL (less (value C1) (value C2)) #else CHAR_ERROR
+        #def ORD C = #if ischar C #then MAKE_NUMB (value C) #else CHAR_ERROR
+        #def CHAR N = #if isnumb N #then MAKE_CHAR (value N) #else NUMB_ERROR
+        #def CHAR_EQUAL C1 C2 = #if and (ischar C1) (ischar C2) #then MAKE_BOOL (equal (value C1) (value C2)) #else CHAR_ERROR
         """)
     }
 
@@ -126,6 +111,9 @@ class TypesTest : BaseParserTest() {
         "isbool TRUE" assertResult "true"
         "isbool FALSE" assertResult "true"
         "isbool ERROR" assertResult "false"
+        "ISBOOL TRUE" assertResult "TRUE"
+        "ISBOOL FALSE" assertResult "TRUE"
+        "ISBOOL ERROR" assertResult "FALSE"
         "AND TRUE FALSE" assertResult "FALSE"
         "NOT FALSE" assertResult "TRUE"
     }
@@ -151,6 +139,14 @@ class TypesTest : BaseParserTest() {
         "isnumb FALSE" assertResult "false"
         "isnumb ERROR" assertResult "false"
 
+        "ISNUMB 0" assertResult "TRUE"
+        "ISNUMB 1" assertResult "TRUE"
+        "ISNUMB 2" assertResult "TRUE"
+        "ISNUMB 3" assertResult "TRUE"
+        "ISNUMB TRUE" assertResult "FALSE"
+        "ISNUMB FALSE" assertResult "FALSE"
+        "ISNUMB ERROR" assertResult "FALSE"
+
         "+ 1 2" assertSameResult "3"
         "- 4 2" assertSameResult "2"
         "- 1 2" assertSameResult "0"
@@ -161,5 +157,32 @@ class TypesTest : BaseParserTest() {
         "EQUAL 2 3" assertSameResult "FALSE"
     }
 
+    @Test fun charType() {
+        "make_obj char_type" assertResult "MAKE_CHAR"
+        "MAKE_ERROR char_type" assertResult "CHAR_ERROR"
+
+        "ischar '0'" assertResult "true"
+        "ischar '9'" assertResult "true"
+        "ischar 'A'" assertResult "true"
+        "ischar 'Z'" assertResult "true"
+        "ischar 'a'" assertResult "true"
+        "ischar 'z'" assertResult "true"
+        "ischar 0" assertResult "false"
+        "ischar one" assertResult "false"
+        "ischar true" assertResult "false"
+
+        "ISCHAR '0'" assertResult "TRUE"
+        "ISCHAR '9'" assertResult "TRUE"
+        "ISCHAR 'A'" assertResult "TRUE"
+        "ISCHAR 'Z'" assertResult "TRUE"
+        "ISCHAR 'a'" assertResult "TRUE"
+        "ISCHAR 'z'" assertResult "TRUE"
+        "ISCHAR 0" assertResult "FALSE"
+        "ISCHAR one" assertResult "FALSE"
+        "ISCHAR true" assertResult "FALSE"
+
+        "ORD 'A'" assertSameResult "65"
+        "CHAR 98" assertSameResult "'b'"
+    }
 
 }
