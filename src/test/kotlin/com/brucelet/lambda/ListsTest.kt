@@ -1,6 +1,5 @@
 package com.brucelet.lambda
 
-import org.junit.Ignore
 import org.junit.Test
 
 class ListsTest : BaseParserTest() {
@@ -113,30 +112,61 @@ class ListsTest : BaseParserTest() {
         """)
     }
 
-    @Test fun listType() {
-        "CONS 1 NIL" assertSameResult "λs.(s list_type λs.(s 1 NIL))"
-        "HEAD (CONS 1 (CONS 2 NIL))" assertSameResult "1"
-        "TAIL (CONS 1 (CONS 2 NIL))" assertSameResult "CONS 2 NIL"
-        "HEAD (TAIL (CONS 1 (CONS 2 NIL)))" assertSameResult "2"
-        "HEAD NIL" assertSameResult "LIST_ERROR"
-        "TAIL NIL" assertSameResult "LIST_ERROR"
+    @Test fun untypedList() {
+        parser.parseLines("""
+        #def cons h t s = s h t
+        #def head l = l select_first
+        #def tail l = l select_second
 
-        "isnil (CONS 1 NIL)" assertSameResult "false"
-        "isnil NIL" assertSameResult "true"
-        "ISNIL (CONS 1 NIL)" assertSameResult "FALSE"
-        "ISNIL NIL" assertSameResult "TRUE"
-        "ISNIL 1" assertSameResult "LIST_ERROR"
+        #def empty = make_pair false false
+        #def isempty l = not (or (head l) (tail l))
+
+        #rec length l = #if isempty l #then zero #else succ (length (tail l))
+
+        #rec append l1 l2 = #if equal (length l1) zero #then l2 #else cons (head l1) (append (tail l1) l2)
+
+        #rec numblist n = cons n (numblist (succ n))
+        #def numbers = numblist zero
+        """)
+
+        "isempty empty" assertSameResult "true"
+        "isempty (cons one empty)" assertNotSameResult "false"
+        "isempty (cons one (cons 2 empty))" assertNotSameResult "false"
+
+        "length empty" assertSameResult "zero"
+        "length (cons one empty)" assertSameResult "one"
+        "length (cons one (cons two empty))" assertSameResult "two"
+
+        "append (cons one (cons two empty)) (cons three empty)" assertSameResult "cons one (cons two (cons three empty))"
+
+        "head numbers" assertSameResult "zero"
+        "head (tail numbers)" assertSameResult "one"
     }
 
-    @Test fun length() {
-        "LENGTH NIL" assertSameResult "0"
-        "LENGTH (CONS 1 NIL)" assertSameResult "1"
-        // TODO long (~40s)
-//        "LENGTH (CONS 1 (CONS 2 NIL))" assertSameResult "2"
-    }
-
-    @Ignore // TODO long (~50s)
-    @Test fun append() {
-        "APPEND (CONS 1 (CONS 2 NIL)) (CONS 3 NIL)" assertSameResult "CONS 1 (CONS 2 (CONS 3 NIL))"
-    }
+//    @Test fun listType() {
+//        "CONS 1 NIL" assertSameResult "λs.(s list_type λs.(s 1 NIL))"
+//        "HEAD (CONS 1 (CONS 2 NIL))" assertSameResult "1"
+//        "TAIL (CONS 1 (CONS 2 NIL))" assertSameResult "CONS 2 NIL"
+//        "HEAD (TAIL (CONS 1 (CONS 2 NIL)))" assertSameResult "2"
+//        "HEAD NIL" assertSameResult "LIST_ERROR"
+//        "TAIL NIL" assertSameResult "LIST_ERROR"
+//
+//        "isnil (CONS 1 NIL)" assertSameResult "false"
+//        "isnil NIL" assertSameResult "true"
+//        "ISNIL (CONS 1 NIL)" assertSameResult "FALSE"
+//        "ISNIL NIL" assertSameResult "TRUE"
+//        "ISNIL 1" assertSameResult "LIST_ERROR"
+//    }
+//
+//    @Test fun length() {
+//        "LENGTH NIL" assertSameResult "0"
+//        "LENGTH (CONS 1 NIL)" assertSameResult "1"
+//        // TODO long (~40s)
+////        "LENGTH (CONS 1 (CONS 2 NIL))" assertSameResult "2"
+//    }
+//
+//    @Ignore // TODO long (~50s)
+//    @Test fun append() {
+//        "APPEND (CONS 1 (CONS 2 NIL)) (CONS 3 NIL)" assertSameResult "CONS 1 (CONS 2 (CONS 3 NIL))"
+//    }
 }
