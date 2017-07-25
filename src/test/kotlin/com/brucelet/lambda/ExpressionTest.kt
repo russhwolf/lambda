@@ -42,4 +42,14 @@ class ExpressionTest {
     @Test fun reduce() {
         assertEquals(Name("B"), Application(Function("A", "A"), "B").reduce())
     }
+
+    @Test fun lazyEval() {
+        var expression = "(λs.(s s) (λx.x λy.y))".parseExpression()
+        expression.reduceOnce(expression) { expression = it }
+        expression.toString() assertEquals "((λx.x λy.y) (λx.x λy.y))"
+        expression.reduceOnce(expression) { expression = it }
+        expression.toString() assertEquals "(λy.y λy.y)"
+        expression.reduceOnce(expression) { expression = it }
+        expression.toString() assertEquals "λy.y"
+    }
 }
